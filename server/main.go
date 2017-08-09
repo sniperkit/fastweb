@@ -28,11 +28,7 @@ var (
 	err       error
 
 	Configuration *Config
-)
 
-var (
-	logfile     string = "./output.log"
-	errorfile   string = "./error.log"
 	url         string = "test localhost"
 	encoder_cfg        = zapcore.EncoderConfig{
 		/**

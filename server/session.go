@@ -13,11 +13,11 @@ var (
 	db   *goredis.Database
 	sess sessions.Sessions
 
-	mySessionsConfig = sessions.Config{Cookie: "mysessioncookieid",
+	mySessionsConfig = sessions.Config{
+		Cookie:                      "mysessioncookieid",
 		Expires:                     time.Duration(2) * time.Hour,
 		DisableSubdomainPersistence: false,
 	}
-
 	mySessions = sessions.New(mySessionsConfig)
 )
 

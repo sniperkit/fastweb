@@ -13,6 +13,7 @@ type (
 		Vhost              bool   `default:"false"`
 		ErrorFile          string `default:"./error-fasthttp.log"`
 		AccessFile         string `default:"./access-fasthttp.log"`
+		RedisFlag          bool   `default:"false"`
 	}
 	Config struct {
 		Server ServerConfig
