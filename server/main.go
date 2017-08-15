@@ -17,7 +17,8 @@ import (
 )
 
 type (
-	ZapLog = zap.SugaredLogger
+	ZapLog      = zap.SugaredLogger
+	FastHandler fasthttp.RequestHandler
 )
 
 var (
@@ -29,8 +30,8 @@ var (
 
 	Configuration *Config
 
-	url         string = "test localhost"
-	encoder_cfg        = zapcore.EncoderConfig{
+	url             string = "test localhost"
+	log_encoder_cfg        = zapcore.EncoderConfig{
 		/**
 		TimeKey:       "T",
 
@@ -67,10 +68,10 @@ func ZapProductionConfig(Configuration *Config) zap.Config {
 			Initial:    100,
 			Thereafter: 100,
 		},
-		//Encoding: "json",
-		Encoding: "console",
+		Encoding: "json",
+		//Encoding: "console",
 		//EncoderConfig:   zap.NewProductionEncoderConfig(),
-		EncoderConfig:    encoder_cfg,
+		EncoderConfig:    log_encoder_cfg,
 		OutputPaths:      []string{"stderr", Configuration.Server.AccessFile},
 		ErrorOutputPaths: []string{"stderr", Configuration.Server.ErrorFile},
 	}
@@ -173,7 +174,7 @@ func handlerHeader(ctx *fasthttp.RequestCtx) {
 		}
 	)
 	data := JsonPost{"test", "test"}
-	spew.Dump(data)
+	//spew.Dump(data)
 	jsoniter.Unmarshal(postBody, &data)
 	v := map[string]string{"hello": "json"}
 	m, _ := jsoniter.Marshal(v)
