@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-var key = "|-8xrgPfS)Aa4xtAIL^k5qX)$Y5Rim9Z"
+var aesKey = "|-8xrgPfS)Aa4xtAIL^k5qX)$Y5Rim9Z"
 
 func Test_AES_ECB(t *testing.T) {
 
-	cipher, err := crypto.NewAES([]byte(key))
+	cipher, err := crypto.NewAES([]byte(aesKey))
 	if err != nil {
 		t.Error(err)
 		return
@@ -38,8 +38,8 @@ func Test_AES_ECB(t *testing.T) {
 
 func Test_AES_CBC(t *testing.T) {
 
-	mode := cipher.NewCBCMode()                         //加密工作模式，支持 CBC ECB CFB CTR 四种工作模式
-	cipher, err := crypto.NewAESWith([]byte(key), mode) //创建一个AES 加密的builder
+	mode := cipher.NewCBCMode()                            //加密工作模式，支持 CBC ECB CFB CTR 四种工作模式
+	cipher, err := crypto.NewAESWith([]byte(aesKey), mode) //创建一个AES 加密的builder
 	if err != nil {
 		t.Error(err)
 		return
@@ -66,7 +66,7 @@ func Test_AES_CFB(t *testing.T) {
 
 	mode := cipher.NewCFBMode()
 
-	cipher, err := crypto.NewAESWith([]byte(key), mode)
+	cipher, err := crypto.NewAESWith([]byte(aesKey), mode)
 	if err != nil {
 		t.Error(err)
 		return
@@ -94,7 +94,7 @@ func Test_AES_OFB(t *testing.T) {
 
 	mode := cipher.NewOFBMode()
 
-	cipher, err := crypto.NewAESWith([]byte(key), mode)
+	cipher, err := crypto.NewAESWith([]byte(aesKey), mode)
 	if err != nil {
 		t.Error(err)
 		return
@@ -122,7 +122,7 @@ func Test_AES_CTR(t *testing.T) {
 
 	mode := cipher.NewCTRMode()
 
-	cipher, err := crypto.NewAESWith([]byte(key), mode)
+	cipher, err := crypto.NewAESWith([]byte(aesKey), mode)
 	if err != nil {
 		t.Error(err)
 		return

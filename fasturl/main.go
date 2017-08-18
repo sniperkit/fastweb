@@ -1,25 +1,11 @@
 package fasturl
 
 import (
-	"github.com/json-iterator/go"
+	//	"github.com/json-iterator/go"
 	"github.com/valyala/fasthttp"
 	"log"
 	"time"
 )
-
-func jsonTest() {
-	// User model
-
-	type User struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
-	}
-	// Marshal
-	jsonByte, _ := jsoniter.Marshal(User{"iftekhersunny", 27})
-	// Unmarshal
-	data := map[string]string{}
-	jsoniter.Unmarshal(jsonByte, &data)
-}
 
 func fastGet(url string, timeOut time.Duration) (*fasthttp.Response, error) {
 	// init http client
@@ -45,10 +31,10 @@ func fastGet(url string, timeOut time.Duration) (*fasthttp.Response, error) {
 	return response, nil
 }
 
-func fastPost(url, body string, timeOut time.Duration) (*fasthttp.Response, error) {
+func fastPost(url string, body []byte, timeOut time.Duration) (*fasthttp.Response, error) {
 	request := fasthttp.AcquireRequest()
 	request.SetRequestURI(url)
-	request.Header.Add("User-Agent", "Test-Agent")
+	//	request.Header.Add("User-Agent", "Test-Agent")
 	request.Header.Add("Accept", "application/json")
 
 	// GET http://127.0.0.1:61765 HTTP/1.1
@@ -56,7 +42,7 @@ func fastPost(url, body string, timeOut time.Duration) (*fasthttp.Response, erro
 	// User-Agent: Test-Agent
 
 	request.Header.SetMethod("POST")
-	request.SetBodyString(body)
+	request.SetBody(body)
 
 	responce := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}

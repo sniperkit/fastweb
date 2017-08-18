@@ -1,4 +1,4 @@
-package main
+package fasturl
 
 // type for http://httpbin.org
 // for test only

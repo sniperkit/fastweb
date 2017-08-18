@@ -29,12 +29,14 @@ func TestFastGet(t *testing.T) {
 func TestFastPost(t *testing.T) {
 	// Only pass t into top-level Convey calls
 	Convey("test fasthttp client function GET ", t, func() {
-		response, err := fastPost("http://httpbin.org/post", "p=q", 5*time.Second)
+		response, err := fastPost("http://httpbin.org/post", []byte("p=q"), 5*time.Second)
 
 		var ipbody HttpbinPostBody //{"113.87.14.183"}
 
 		if err != nil {
-			jsoniter.Unmarshal(response.Body(), &ipbody)
+			body := response.Body()
+
+			jsoniter.Unmarshal(body, &ipbody)
 			So(ipbody.Data, ShouldEqual, "p=q")
 			//So(response.Header.StatusCode(), ShouldEqual, "200")
 		}

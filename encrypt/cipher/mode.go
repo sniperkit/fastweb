@@ -1,6 +1,8 @@
 package cipher
 
-import . "crypto/cipher"
+import (
+	. "crypto/cipher"
+)
 
 /**
 CipherMode为不同的工作模式提供了统一的接口来设置填充方式，创建Cipher。
