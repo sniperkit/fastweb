@@ -2,87 +2,126 @@ package guid
 
 import (
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"os"
 	"sync/atomic"
 	"time"
 )
 
-// objectIdCounter is atomically incremented when generating a new ObjectId
-// using NewObjectId() function. It's used as a counter part of an id.
-var objectIdCounter uint32 = 0
-
-// machineId stores machine id generated once and used in subsequent calls
-// to NewObjectId function.
-var machineId = readMachineId()
-
-// ObjectId is a unique ID identifying a BSON value. It must be exactly 12 bytes
-// long. MongoDB objects by default have such a property set in their "_id"
-// property.
-//
-// http://www.mongodb.org/display/DOCS/Object+IDs
-type ObjectId string
-
-func main() {
-	objID := NewObjectId()
-	fmt.Println(objID)
-	fmt.Println(objID.Hex())
+// GUID is an interface unifying identifiers of
+// different lengths
+type GUID interface {
+	CreatedAt() time.Time
+	WriteTo(w io.Writer) (int64, error)
+	Bytes() []byte
+	String() string
 }
 
-// readMachineId generates machine id and puts it into the machineId global
-// variable. If this function fails to get the hostname, it will cause
-// a runtime error.
-func readMachineId() []byte {
-	var sum [3]byte
-	id := sum[:]
-	hostname, err1 := os.Hostname()
-	if err1 != nil {
-		_, err2 := io.ReadFull(rand.Reader, id)
-		if err2 != nil {
-			panic(fmt.Errorf("cannot get hostname: %v; %v", err1, err2))
-		}
-		return id
+// --------------------------------------------------------------------
+
+// GUID96 is a 12-byte globally unique identifier
+type GUID96 [12]byte
+
+var base96 = GUID96{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+// New96 creates a 96bit/12byte global identifier
+func New96() GUID96 { return new96at(time.Now()) }
+
+func new96at(ts time.Time) GUID96 {
+	bininc := [4]byte{0, 0, 0, 0}
+	encoder.PutUint32(bininc[:], nextInc())
+
+	bytes := base96
+	encoder.PutUint32(bytes[0:], uint32(ts.Unix()))
+	copy(bytes[4:], hostpid[:])
+	copy(bytes[9:], bininc[1:])
+
+	return bytes
+}
+
+// Bytes returns a byte slice
+func (g GUID96) Bytes() []byte { return g[:] }
+
+// WriteTo implements io.WriterTo
+func (g GUID96) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(g[:])
+	return int64(n), err
+}
+
+// CreatedAt extract the timestamp at which the GUID was created
+func (g GUID96) CreatedAt() time.Time {
+	return time.Unix(int64(encoder.Uint32(g[0:])), 0)
+}
+
+func (g GUID96) String() string {
+	return hex.EncodeToString(g.Bytes())
+}
+
+// --------------------------------------------------------------------
+
+// GUID128 is a 16-byte globally unique identifier
+type GUID128 [16]byte
+
+var base128 = GUID128{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+// New128 creates a 128bit/16byte global identifier
+func New128() GUID128 { return new128at(time.Now()) }
+
+func new128at(ts time.Time) GUID128 {
+	bininc := [4]byte{0, 0, 0, 0}
+	encoder.PutUint32(bininc[:], nextInc())
+
+	bytes := base128
+	encoder.PutUint64(bytes[0:], uint64(ts.Unix()))
+	copy(bytes[8:], hostpid[:])
+	copy(bytes[13:], bininc[1:])
+
+	return bytes
+}
+
+// Bytes returns a byte slice
+func (g GUID128) Bytes() []byte { return g[:] }
+
+// WriteTo implements io.WriterTo
+func (g GUID128) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(g[:])
+	return int64(n), err
+}
+
+// CreatedAt extract the timestamp at which the GUID was created
+func (g GUID128) CreatedAt() time.Time {
+	return time.Unix(int64(encoder.Uint64(g[0:])), 0)
+}
+
+func (g GUID128) String() string {
+	return hex.EncodeToString(g.Bytes())
+}
+
+// --------------------------------------------------------------------
+
+const maxUint24 = (1 << 24) - 1
+
+var inc uint32
+var hostpid [5]byte
+var encoder = binary.BigEndian
+
+func init() {
+	hostname, _ := os.Hostname()
+	if hostname == "" {
+		hostname = "tsinglab"
 	}
-	hw := md5.New()
-	hw.Write([]byte(hostname))
-	copy(id, hw.Sum(nil))
-	fmt.Println("readMachineId:" + string(id))
-	return id
+
+	hash := md5.Sum([]byte(hostname))
+	copy(hostpid[:], hash[:3])
+	encoder.PutUint16(hostpid[3:], uint16(os.Getpid()))
 }
 
-// NewObjectId returns a new unique ObjectId.
-// 4byte 时间，
-// 3byte 机器ID
-// 2byte pid
-// 3byte 自增ID
-func NewObjectId() ObjectId {
-	var b [12]byte
-	// Timestamp, 4 bytes, big endian
-	binary.BigEndian.PutUint32(b[:], uint32(time.Now().Unix()))
-	// Machine, first 3 bytes of md5(hostname)
-	b[4] = machineId[0]
-	b[5] = machineId[1]
-	b[6] = machineId[2]
-	// Pid, 2 bytes, specs don't specify endianness, but we use big endian.
-	pid := os.Getpid()
-	b[7] = byte(pid >> 8)
-	b[8] = byte(pid)
-	// Increment, 3 bytes, big endian
-	i := atomic.AddUint32(&objectIdCounter, 1)
-	b[9] = byte(i >> 16)
-	b[10] = byte(i >> 8)
-	b[11] = byte(i)
-	return ObjectId(b[:])
+func nextInc() uint32 {
+	num := atomic.AddUint32(&inc, 1)
+	if num > maxUint24 {
+		num = atomic.AddUint32(&inc, maxUint24+1)
+	}
+	return num
 }
-
-// Hex returns a hex representation of the ObjectId.
-// 返回16进制对应的字符串
-func (id ObjectId) Hex() string {
-	return hex.EncodeToString([]byte(id))
-}
-
-// design and code by tsingson
